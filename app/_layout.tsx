@@ -1,10 +1,29 @@
+import { disconnectRealtime } from '@/lib/roomAppwrite';
 import { Stack } from 'expo-router';
-import { View } from 'react-native';
+import { useEffect } from 'react';
+import { AppState, View } from 'react-native';
 import 'react-native-reanimated';
 import "./global.css";
 
 export default function RootLayout() {
   // const { fetchAuthenticatedUser } = useAuthStore();
+
+  // Handle app state changes - disconnect realtime when app goes to background
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      // When app goes to background or is inactive
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        console.log('App going to background - disconnecting realtime');
+        disconnectRealtime();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+      // Also ensure disconnect on app unmount
+      disconnectRealtime();
+    };
+  }, []);
 
   // const [fontsLoaded, error] = useFonts({
   //   SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),

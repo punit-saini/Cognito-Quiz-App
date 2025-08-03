@@ -33,11 +33,18 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Ionicons name="play-outline" size={28} color={color} />,
         }}
       />
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="friends"
         options={{
           title: 'Friends',
           tabBarIcon: ({ color }) => <Ionicons size={28} name="people-circle-outline" color={color} />,
+        }}
+      /> */}
+      <Tabs.Screen
+        name="Results"
+        options={{
+          title: 'Results',
+          tabBarIcon: ({ color }) => <Ionicons size={28} name="trophy-outline" color={color} />,
         }}
       />
       <Tabs.Screen

@@ -1,4 +1,5 @@
 import { fetchQuizQuestions } from '@/lib/quiz';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, PanResponder, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
@@ -14,6 +15,24 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ name, categories }) => {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [responses, setResponses] = useState<{ [key: number]: string }>({});
   const [showResult, setShowResult] = useState(false);
+  // Store solo play result in AsyncStorage
+  const saveSoloResult = async () => {
+    const result = {
+      score: getScore(),
+      total: questions.length,
+      categories,
+      date: new Date().toISOString(),
+    };
+    try {
+      const prev = await AsyncStorage.getItem('solo_results');
+      let arr = [];
+      if (prev) arr = JSON.parse(prev);
+      arr.push(result);
+      await AsyncStorage.setItem('solo_results', JSON.stringify(arr));
+    } catch (e) {
+      console.log('Error saving solo result:', e);
+    }
+  };
   // Calculate score
   const getScore = () => {
     let score = 0;
@@ -67,9 +86,9 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ name, categories }) => {
   }, [categories]);
 
   // Log responses when they change
-  useEffect(() => {
-    console.log('User responses:', responses);
-  }, [responses]);
+//   useEffect(() => {
+//     console.log('User responses:', responses);
+//   }, [responses]);
 
   // PanResponder for swipe navigation
   const panResponder = PanResponder.create({
@@ -179,7 +198,10 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ name, categories }) => {
             </View>
             <TouchableOpacity
               className="w-full py-3 rounded-lg bg-green-600 mt-6"
-              onPress={() => setShowResult(true)}
+              onPress={async () => {
+                await saveSoloResult();
+                setShowResult(true);
+              }}
               disabled={Object.keys(responses).length === 0}
             >
               <Text className="text-white text-lg text-center font-semibold">Submit Test</Text>
