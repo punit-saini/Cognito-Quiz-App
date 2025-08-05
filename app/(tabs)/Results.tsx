@@ -2,9 +2,11 @@ import ResultsScreen from '@/components/ResultsScreen';
 import { getRoomsForUser } from '@/lib/roomAppwrite';
 import useAuthStore from '@/store/auth.store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Animated, FlatList, Modal, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Modal, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Results() {
   const { isAuthenticated } = useAuthStore();
@@ -13,47 +15,84 @@ export default function Results() {
   const [multiplayerGames, setMultiplayerGames] = useState<any[]>([]);
   const [soloGames, setSoloGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('solo'); // 'solo' or 'multiplayer'
-  const [animation] = useState(new Animated.Value(0));
 
-  // Animation effect for tab switch
-  useEffect(() => {
-    Animated.timing(animation, {
-      toValue: activeTab === 'solo' ? 0 : 1,
-      duration: 250,
-      useNativeDriver: true
-    }).start();
-  }, [activeTab, animation]);
-
-  // Fetch both solo and multiplayer game data
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Fetch solo games from AsyncStorage
-        const soloData = await AsyncStorage.getItem('solo_results');
-        if (soloData) setSoloGames(JSON.parse(soloData));
-        else setSoloGames([]);
+  // Function to fetch data (can be called for initial load or refresh)
+  const fetchData = async () => {
+    if (!refreshing) setLoading(true);
+    try {
+      // Fetch solo games from AsyncStorage - user specific if authenticated
+      let userSoloGames: any[] = [];
+      
+      if (isAuthenticated && user?.$id) {
+        // Get user-specific solo games
+        const userKey = `solo_results_${user.$id}`;
+        const userSoloData = await AsyncStorage.getItem(userKey);
         
-        // Fetch multiplayer games if authenticated
-        if (isAuthenticated && user?.$id) {
-          const allRooms = await getRoomsForUser(user.$id);
-          setMultiplayerGames(allRooms || []);
+        if (userSoloData) {
+          userSoloGames = JSON.parse(userSoloData);
+        } else {
+          // For backward compatibility - check global storage and filter by user ID
+          const globalSoloData = await AsyncStorage.getItem('solo_results');
+          if (globalSoloData) {
+            const allGames = JSON.parse(globalSoloData);
+            userSoloGames = allGames.filter((game: any) => 
+              game.userId === user.$id || game.userEmail === user.email
+            );
+            
+            // Save these filtered results to the user's specific storage for future use
+            if (userSoloGames.length > 0) {
+              await AsyncStorage.setItem(userKey, JSON.stringify(userSoloGames));
+            }
+          }
+        }
+      } else {
+        // For guest users, only show guest games
+        const guestData = await AsyncStorage.getItem('solo_results_guest');
+        if (guestData) {
+          userSoloGames = JSON.parse(guestData);
+        }
+      }
+      
+      // Sort games by date
+      userSoloGames.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setSoloGames(userSoloGames);
+
+      // Fetch multiplayer games if authenticated
+      if (isAuthenticated && user?.$id) {
+        const allRooms = await getRoomsForUser(user.$id);
+        // Sort by createdAt descending
+        if (allRooms && Array.isArray(allRooms)) {
+          allRooms.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setMultiplayerGames(allRooms);
         } else {
           setMultiplayerGames([]);
         }
-      } catch (error) {
-        console.error('Error fetching game data:', error);
-        setSoloGames([]);
+      } else {
         setMultiplayerGames([]);
-      } finally {
-        setLoading(false);
       }
-    };
-
+    } catch (error) {
+      console.error('Error fetching game data:', error);
+      setSoloGames([]);
+      setMultiplayerGames([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+  
+  // Function to handle manual refresh
+  const handleRefresh = () => {
+    setRefreshing(true);
     fetchData();
-  }, [isAuthenticated, user?.$id]);
+  };
+
+  // Fetch data on component mount or when dependencies change
+  useEffect(() => {
+    fetchData();
+  }, [isAuthenticated, user?.$id, user?.email]);
 
   const renderResultItem = ({ item }: { item: any }) => {
     const isHost = item.hostUserId === user?.$id;
@@ -90,21 +129,104 @@ export default function Results() {
       const d = new Date(item.createdAt);
       dateStr = d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
+    
+    // Determine winner status
+    const youWon = yourScore > opponentScore;
+    const tie = yourScore === opponentScore;
+    
     return (
       <TouchableOpacity
         onPress={() => setSelectedRoom(item)}
-        style={{ backgroundColor: '#222', borderRadius: 12, padding: 16, marginBottom: 12 }}
-        activeOpacity={0.7}
+        activeOpacity={0.8}
+        style={{
+          marginBottom: 16,
+          overflow: 'hidden',
+          shadowColor: '#37B6E9',
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          elevation: 4,
+        }}
       >
-        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16, marginBottom: 2 }}>
-          {yourName} vs {opponentName}
-        </Text>
-        <Text style={{ color: '#FF6347', fontSize: 15, marginBottom: 2 }}>
-          Your score: {yourScore.toFixed(1)} | {opponentName}'s score: {opponentScore.toFixed(1)}
-        </Text>
-        {dateStr && (
-          <Text style={{ color: '#aaa', fontSize: 13 }}>{dateStr}</Text>
-        )}
+        <LinearGradient
+          colors={[
+            youWon ? 'rgba(106, 61, 232, 0.2)' : tie ? 'rgba(55, 182, 233, 0.15)' : 'rgba(55, 182, 233, 0.1)',
+            'rgba(55, 55, 100, 0.05)'
+          ]}
+          style={{
+            borderRadius: 16,
+            borderTopRightRadius: 24,
+            borderBottomLeftRadius: 24,
+            padding: 16,
+            borderWidth: 1,
+            borderColor: youWon ? 'rgba(106, 61, 232, 0.2)' : 'rgba(55, 182, 233, 0.15)',
+          }}
+        >
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+            <Text style={{ 
+              color: '#fff', 
+              fontWeight: 'bold', 
+              fontSize: 16, 
+              marginBottom: 2,
+              fontFamily: 'Poppins-SemiBold'
+            }}>
+              {yourName} vs {opponentName}
+            </Text>
+            {youWon && (
+              <View style={{ 
+                backgroundColor: 'rgba(106, 61, 232, 0.2)', 
+                paddingHorizontal: 8, 
+                paddingVertical: 2, 
+                borderRadius: 8 
+              }}>
+                <Text style={{ color: 'rgba(106, 61, 232, 0.9)', fontWeight: 'bold', fontSize: 12 }}>
+                  Winner
+                </Text>
+              </View>
+            )}
+          </View>
+          
+          <View style={{ 
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+            padding: 10,
+            borderRadius: 8,
+            marginBottom: 8
+          }}>
+            <View>
+              <Text style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: 12, marginBottom: 2 }}>
+                Your Score
+              </Text>
+              <Text style={{ 
+                color: '#37B6E9', 
+                fontWeight: 'bold', 
+                fontSize: 16 
+              }}>
+                {yourScore.toFixed(1)}
+              </Text>
+            </View>
+            <View style={{ height: '100%', width: 1, backgroundColor: 'rgba(255,255,255,0.1)' }} />
+            <View>
+              <Text style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: 12, marginBottom: 2 }}>
+                {opponentName}'s Score
+              </Text>
+              <Text style={{ 
+                color: '#37B6E9', 
+                fontWeight: 'bold', 
+                fontSize: 16 
+              }}>
+                {opponentScore.toFixed(1)}
+              </Text>
+            </View>
+          </View>
+          
+          {dateStr && (
+            <Text style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 13, fontFamily: 'Inter' }}>
+              {dateStr}
+            </Text>
+          )}
+        </LinearGradient>
       </TouchableOpacity>
     );
   };
@@ -117,17 +239,48 @@ export default function Results() {
     });
     
     return (
-      <View style={{ backgroundColor: '#222', borderRadius: 12, padding: 16, marginBottom: 12 }}>
-        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16, marginBottom: 2 }}>
-          Solo Game #{index + 1}
-        </Text>
-        <Text style={{ color: '#FF6347', fontSize: 15, marginBottom: 2 }}>
-          Score: {item.score} / {item.total}
-        </Text>
-        <Text style={{ color: '#ddd', fontSize: 14, marginBottom: 2 }}>
-          Categories: {item.categories.join(', ')}
-        </Text>
-        <Text style={{ color: '#aaa', fontSize: 13 }}>{dateStr}</Text>
+      <View style={{ 
+        marginBottom: 16,
+        overflow: 'hidden',
+        shadowColor: '#37B6E9',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 4,
+      }}>
+        <LinearGradient
+          colors={['rgba(55, 182, 233, 0.15)', 'rgba(55, 182, 233, 0.05)']}
+          style={{ 
+            borderRadius: 16, 
+            borderTopLeftRadius: 24, 
+            borderBottomRightRadius: 24,
+            padding: 16,
+            borderWidth: 1,
+            borderColor: 'rgba(55, 182, 233, 0.15)',
+          }}
+        >
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16, fontFamily: 'Poppins-SemiBold' }}>
+              Solo Game #{index + 1}
+            </Text>
+            <View style={{ 
+              backgroundColor: 'rgba(55, 182, 233, 0.2)',
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: 12
+            }}>
+              <Text style={{ color: '#37B6E9', fontWeight: 'bold', fontSize: 13 }}>
+                {item.score} / {item.total}
+              </Text>
+            </View>
+          </View>
+          
+          <Text style={{ color: '#ddd', fontSize: 14, marginBottom: 8, fontFamily: 'Inter' }}>
+            Categories: <Text style={{ color: 'rgba(55, 182, 233, 0.8)' }}>{item.categories.join(', ')}</Text>
+          </Text>
+          
+          <Text style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 13, fontFamily: 'Inter' }}>{dateStr}</Text>
+        </LinearGradient>
       </View>
     );
   };
@@ -139,113 +292,161 @@ export default function Results() {
   // Get data for current tab
   const currentGames = activeTab === 'solo' ? soloGames : multiplayerGames;
   
-  // Calculate animation values for the sliding indicator
-  const translateX = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 120] // Adjust based on your tab width
-  });
+  // No animation calculation needed anymore
 
   return (
-    <View style={{ flex: 1, padding: 16, backgroundColor: '#111' }}>
-      <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold', marginBottom: 16 }}>
-        Game Results
-      </Text>
-      
-      {/* Tab Selector */}
-      <View style={{ marginBottom: 20 }}>
-        <View style={{ 
-          flexDirection: 'row', 
-          backgroundColor: '#222', 
-          borderRadius: 30, 
-          height: 40, 
-          position: 'relative',
-          width: 240,
-          alignSelf: 'center'
-        }}>
-          {/* Animated sliding indicator */}
-          <Animated.View 
-            style={{
-              position: 'absolute',
-              left: 4,
-              top: 4,
-              backgroundColor: '#FF6347',
-              width: 116,
-              height: 32,
-              borderRadius: 26,
-              transform: [{ translateX }]
-            }}
-          />
-          
-          {/* Solo Tab */}
-          <TouchableOpacity 
-            style={{ 
-              flex: 1, 
-              justifyContent: 'center', 
-              alignItems: 'center',
-              zIndex: 1
-            }}
-            onPress={() => handleTabSwitch('solo')}
-          >
+    <View style={{ flex: 1 }}>
+      <LinearGradient
+        colors={["#181C24", "#222834", "#10131A"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ flex: 1 }}
+      >
+        <SafeAreaView style={{ flex: 1, paddingHorizontal: 16, paddingTop: 16 }}>
+          {/* Header with logo */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
+            <Image
+              source={require('../../assets/images/cognito-logo.png')}
+              style={{ width: 40, height: 40, marginRight: 8, resizeMode: 'contain' }}
+            />
             <Text style={{ 
-              color: activeTab === 'solo' ? '#fff' : '#aaa',
-              fontWeight: activeTab === 'solo' ? 'bold' : 'normal'
+              fontSize: 24, 
+              fontWeight: 'bold', 
+              color: 'white', 
+              fontFamily: 'Poppins-Bold' 
             }}>
-              Solo
+              Game Results
             </Text>
-          </TouchableOpacity>
+          </View>
           
-          {/* Multiplayer Tab */}
-          <TouchableOpacity 
-            style={{ 
-              flex: 1, 
-              justifyContent: 'center', 
-              alignItems: 'center',
-              zIndex: 1
-            }}
-            onPress={() => handleTabSwitch('multiplayer')}
-          >
-            <Text style={{ 
-              color: activeTab === 'multiplayer' ? '#fff' : '#aaa',
-              fontWeight: activeTab === 'multiplayer' ? 'bold' : 'normal'
-            }}>
-              Multiplayer
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+          {/* Tab Selector - Simplified Version */}
+          <View style={{ marginBottom: 24, alignItems: 'center' }}>
+            <View 
+              style={{ 
+                flexDirection: 'row',
+                width: 240,
+                height: 46,
+                borderRadius: 23,
+                overflow: 'hidden',
+                backgroundColor: 'rgba(55, 182, 233, 0.1)',
+                borderWidth: 1,
+                borderColor: 'rgba(55, 182, 233, 0.2)',
+              }}
+            >
+              {/* Solo Tab */}
+              <TouchableOpacity 
+                style={{ 
+                  flex: 1, 
+                  justifyContent: 'center', 
+                  alignItems: 'center',
+                  backgroundColor: activeTab === 'solo' ? 'rgba(55, 182, 233, 0.3)' : 'transparent',
+                  borderRadius: activeTab === 'solo' ? 20 : 0
+                }}
+                onPress={() => handleTabSwitch('solo')}
+              >
+                <Text 
+                  style={{ 
+                    fontSize: 16, 
+                    color: activeTab === 'solo' ? 'white' : 'rgba(255, 255, 255, 0.6)',
+                    fontFamily: activeTab === 'solo' ? 'Poppins-SemiBold' : 'Inter',
+                  }}
+                >
+                  Solo
+                </Text>
+              </TouchableOpacity>
+              
+              {/* Multiplayer Tab */}
+              <TouchableOpacity 
+                style={{ 
+                  flex: 1, 
+                  justifyContent: 'center', 
+                  alignItems: 'center',
+                  backgroundColor: activeTab === 'multiplayer' ? 'rgba(106, 61, 232, 0.3)' : 'transparent',
+                  borderRadius: activeTab === 'multiplayer' ? 20 : 0
+                }}
+                onPress={() => handleTabSwitch('multiplayer')}
+              >
+                <Text 
+                  style={{ 
+                    fontSize: 16, 
+                    color: activeTab === 'multiplayer' ? 'white' : 'rgba(255, 255, 255, 0.6)',
+                    fontFamily: activeTab === 'multiplayer' ? 'Poppins-SemiBold' : 'Inter',
+                  }}
+                >
+                  Multiplayer
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
       
-      {/* Content based on active tab */}
-      {loading ? (
-        <ActivityIndicator size="large" color="#FF6347" style={{ marginTop: 32 }} />
-      ) : activeTab === 'multiplayer' && !isAuthenticated ? (
-        <View style={{ alignItems: 'center', marginTop: 40 }}>
-          <Text style={{ color: '#fff', fontSize: 16, textAlign: 'center', marginBottom: 20 }}>
-            Please login to view your multiplayer game history
-          </Text>
-          <TouchableOpacity
-            style={{ backgroundColor: '#FF6347', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8 }}
-            onPress={() => router.push('/sign-in' as any)}
-          >
-            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Login</Text>
-          </TouchableOpacity>
-        </View>
-      ) : currentGames.length === 0 ? (
-        <Text style={{ textAlign: 'center', color: '#888', marginTop: 32 }}>
-          No {activeTab} games found.
-        </Text>
-      ) : activeTab === 'solo' ? (
-        <FlatList
-          data={soloGames}
-          keyExtractor={(_, index) => `solo-${index}`}
-          renderItem={renderSoloResultItem}
-        />
-      ) : (
-        <FlatList
-          data={multiplayerGames}
-          keyExtractor={item => item.$id}
-          renderItem={renderResultItem}
-        />
-      )}
+          {/* Content based on active tab */}
+          {loading ? (
+            <ActivityIndicator size="large" color="#37B6E9" style={{ marginTop: 32 }} />
+          ) : activeTab === 'multiplayer' && !isAuthenticated ? (
+            <View style={{ alignItems: 'center', marginTop: 40 }}>
+              <Text style={{ color: '#fff', fontSize: 16, textAlign: 'center', marginBottom: 20 }}>
+                Please login to view your multiplayer game history
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push('/sign-in' as any)}
+              >
+                <LinearGradient
+                  colors={['#37B6E9', '#6a3de8']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{ 
+                    paddingVertical: 12, 
+                    paddingHorizontal: 24, 
+                    borderRadius: 50,
+                    shadowColor: '#37B6E9',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 4,
+                  }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Sign In</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          ) : currentGames.length === 0 ? (
+            <View style={{ alignItems: 'center', marginTop: 32 }}>
+              <Image
+                source={require('../../assets/images/cognito-logo.png')}
+                style={{ width: 60, height: 60, opacity: 0.3, marginBottom: 16, resizeMode: 'contain' }}
+              />
+              <Text style={{ 
+                textAlign: 'center', 
+                color: 'rgba(255, 255, 255, 0.6)', 
+                fontFamily: 'Inter',
+                fontSize: 16
+              }}>
+                No {activeTab} games found yet.
+              </Text>
+            </View>
+          ) : activeTab === 'solo' ? (
+            <FlatList
+              data={soloGames}
+              keyExtractor={(_, index) => `solo-${index}`}
+              renderItem={renderSoloResultItem}
+              contentContainerStyle={{ paddingBottom: 20 }}
+              showsVerticalScrollIndicator={false}
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+            />
+          ) : (
+            <FlatList
+              data={multiplayerGames}
+              keyExtractor={item => item.$id}
+              renderItem={renderResultItem}
+              contentContainerStyle={{ paddingBottom: 20 }}
+              showsVerticalScrollIndicator={false}
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+            />
+          )}
+        </SafeAreaView>
+      </LinearGradient>
       
       <Modal
         visible={!!selectedRoom}
@@ -253,15 +454,33 @@ export default function Results() {
         onRequestClose={() => setSelectedRoom(null)}
         presentationStyle="pageSheet"
       >
-        <View style={{ flex: 1, backgroundColor: '#111' }}>
-          <TouchableOpacity
-            onPress={() => setSelectedRoom(null)}
-            style={{ padding: 12, backgroundColor: '#222', alignSelf: 'flex-start', margin: 12, borderRadius: 8 }}
-          >
-            <Text style={{ color: '#FF6347', fontWeight: 'bold' }}>{'< Back to Results'}</Text>
-          </TouchableOpacity>
-          {selectedRoom && <ResultsScreen room={selectedRoom} userId={user?.$id || ''} />}
-        </View>
+        <LinearGradient
+          colors={["#181C24", "#222834", "#10131A"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ flex: 1 }}
+        >
+          <SafeAreaView style={{ flex: 1 }}>
+            <View style={{ paddingHorizontal: 16 }}>
+              <TouchableOpacity
+                onPress={() => setSelectedRoom(null)}
+                style={{ 
+                  paddingVertical: 10, 
+                  paddingHorizontal: 16, 
+                  alignSelf: 'flex-start', 
+                  margin: 12, 
+                  borderRadius: 20,
+                  backgroundColor: 'rgba(55, 182, 233, 0.15)',
+                  borderWidth: 1,
+                  borderColor: 'rgba(55, 182, 233, 0.3)',
+                }}
+              >
+                <Text style={{ color: '#37B6E9', fontWeight: 'bold' }}>{'< Back to Results'}</Text>
+              </TouchableOpacity>
+            </View>
+            {selectedRoom && <ResultsScreen room={selectedRoom} userId={user?.$id || ''} />}
+          </SafeAreaView>
+        </LinearGradient>
       </Modal>
     </View>
   );

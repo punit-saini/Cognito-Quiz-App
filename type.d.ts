@@ -20,6 +20,8 @@ export interface User extends Models.Document {
     name: string;
     email: string;
     avatar: string;
+    emailVerified?: boolean;
+    userId: string;
 }
 
 export interface CartCustomization {
@@ -65,9 +67,9 @@ interface PaymentInfoStripeProps {
 interface CustomButtonProps {
     onPress?: () => void;
     title?: string;
-    style?: string;
+    style?: any;
     leftIcon?: React.ReactNode;
-    textStyle?: string;
+    textStyle?: any;
     isLoading?: boolean;
 }
 
@@ -79,7 +81,7 @@ interface CustomInputProps {
     placeholder?: string;
     value?: string;
     onChangeText?: (text: string) => void;
-    label: string;
+    label?: string;
     secureTextEntry?: boolean;
     keyboardType?: "default" | "email-address" | "numeric" | "phone-pad";
 }

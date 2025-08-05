@@ -1,10 +1,11 @@
 import MultiplayerQuizScreen from '@/components/MultiplayerQuizScreen';
 import ResultsScreen from '@/components/ResultsScreen';
-import { disconnectRealtime, getRoomById, joinRoomAsGuest, subscribeToRoom } from '@/lib/roomAppwrite';
+import { disconnectRealtime, getRoomById, joinRoomAsGuest, subscribeToRoom, updateRoomStatus } from '@/lib/roomAppwrite';
 import useAuthStore from '@/store/auth.store';
-import { useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, BackHandler, Text, TouchableOpacity, View } from 'react-native';
 
 const GameScreen = () => {
   const { user } = useAuthStore();
@@ -14,6 +15,41 @@ const GameScreen = () => {
   const [error, setError] = useState('');
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
+
+  // Handle back button press and hardware back button
+  const handleBackPress = useCallback(() => {
+    // Only show confirmation when quiz is in progress
+    if (showQuiz && !quizCompleted) {
+      Alert.alert(
+        "Exit Quiz?",
+        "Are you sure you want to exit? Your progress will be lost.",
+        [
+          { text: "Cancel", style: "cancel", onPress: () => {} },
+          { 
+            text: "Exit", 
+            style: "destructive", 
+            onPress: () => {
+              disconnectRealtime();
+              router.back();
+            } 
+          }
+        ]
+      );
+      return true; // Prevent default back action
+    }
+    return false; // Allow default back action
+  }, [showQuiz, quizCompleted]);
+
+  // Set up hardware back button handler
+  useFocusEffect(
+    useCallback(() => {
+      const backHandler = BackHandler.addEventListener(
+        'hardwareBackPress',
+        handleBackPress
+      );
+      return () => backHandler.remove();
+    }, [handleBackPress])
+  );
 
   useEffect(() => {
     const fetchAndSubscribe = async () => {
@@ -36,6 +72,9 @@ const GameScreen = () => {
         // If room is already finished, show results
         if (roomDoc.status === 'finished') {
           setQuizCompleted(true);
+        } else if (roomDoc.status === 'active') {
+          // If room status is 'active', automatically show the quiz for both players
+          setShowQuiz(true);
         }
         
         // Subscribe to realtime updates
@@ -45,6 +84,9 @@ const GameScreen = () => {
           // Check if quiz has finished
           if (updatedRoom.status === 'finished') {
             setQuizCompleted(true);
+          } else if (updatedRoom.status === 'active') {
+            // Auto-start the quiz when the status changes to 'active'
+            setShowQuiz(true);
           }
         });
         
@@ -72,14 +114,8 @@ const GameScreen = () => {
       const latestRoom = await getRoomById(roomId as string);
       setRoom(latestRoom); // Update with latest room data
       
-      // Only show the waiting alert if the other player hasn't finished yet
-      const isHost = user?.$id === latestRoom.hostUserId;
-      const otherPlayerFinished = isHost ? latestRoom.guestFinished : latestRoom.hostFinished;
-      const gameFinished = latestRoom.status === 'finished';
-      
-      if (!otherPlayerFinished && !gameFinished) {
-        Alert.alert('Quiz completed', 'Your answers have been submitted. Waiting for other player to finish...');
-      }
+      // No need for an alert here - the ResultsScreen will show appropriate waiting UI
+      // The waiting state is handled in the ResultsScreen component
     } catch (e) {
       console.log('Error fetching latest room state:', e);
     }
@@ -140,7 +176,19 @@ const GameScreen = () => {
       
       <TouchableOpacity
         className="mt-4 bg-green-600 py-3 px-6 rounded-lg"
-        onPress={() => setShowQuiz(true)}
+        onPress={async () => {
+          try {
+            // Update room status to 'active' to trigger auto-start for both players
+            // This value must be one of the allowed enum values: 'waiting', 'active', 'finished'
+            await updateRoomStatus(roomId as string, 'active');
+            // Local state update (will also happen via subscription)
+            setShowQuiz(true);
+          } catch (e) {
+            console.error('Error starting quiz:', e);
+            // Fallback to local-only start if the update fails
+            setShowQuiz(true);
+          }
+        }}
       >
         <Text className="text-white text-lg font-bold">Start Quiz</Text>
       </TouchableOpacity>

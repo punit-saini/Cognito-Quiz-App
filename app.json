@@ -42,18 +42,16 @@
             "useFrameworks": "static"
           }
         }
-      ],
-      [
-        "@sentry/react-native/expo",
-        {
-          "url": "https://sentry.io/",
-          "project": "react-native",
-          "organization": "punit-03"
-        }
       ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d7ef2ac5-cb47-4661-8ccf-0a951477da30"
+      }
     }
   }
 }

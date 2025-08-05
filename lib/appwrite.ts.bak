@@ -1,0 +1,196 @@
+import { CreateUserParams, SignInParams } from "@/type";
+import { Account, Avatars, Client, Databases, ID, Query, Storage } from "react-native-appwrite";
+
+export const appwriteConfig = {
+    endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!,
+    projectId: process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!,
+    platform: "com.appsbypunit.cognito",
+    databaseId: '688adc4b00070847c88e',
+    userCollectionId: '688adc5e00088013392e',
+}
+
+// Utility function to handle rate limiting with exponential backoff
+const executeWithRetry = async <T>(
+    operation: () => Promise<T>,
+    maxRetries = 3,
+    initialDelay = 1000
+): Promise<T> => {
+    let retries = 0;
+    
+    while (true) {
+        try {
+            return await operation();
+        } catch (error: any) {
+            if (error?.message?.includes('rate limit') && retries < maxRetries) {
+                retries++;
+                const delay = initialDelay * Math.pow(2, retries - 1);
+                console.log(`Rate limit exceeded. Retrying in ${delay}ms (Attempt ${retries}/${maxRetries})...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            } else {
+                throw error; // If it's not a rate limit error or we've exhausted retries, rethrow
+            }
+        }
+    }
+}
+
+export const client = new Client();
+
+client
+    .setEndpoint(appwriteConfig.endpoint)
+    .setProject(appwriteConfig.projectId)
+    .setPlatform(appwriteConfig.platform)
+
+export const account = new Account(client);
+export const databases = new Databases(client);
+export const storage = new Storage(client);
+const avatars = new Avatars(client);
+
+export const createUser = async ({ email, password, name }: CreateUserParams) => {
+    return executeWithRetry(async () => {
+        try {
+            // Before creating a new account, try to delete any existing session
+            try {
+                await account.deleteSession('current');
+            } catch (e) {
+                // No active session or failed to delete, which is fine
+                console.log("No active session to delete or deletion failed:", e);
+            }
+
+            // Create user account with retry logic
+            const newAccount = await account.create(ID.unique(), email, password, name);
+            if(!newAccount) throw Error;
+
+            // Add delay to prevent rate limiting
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Sign in the user to get proper permissions
+            await signIn({ email, password });
+            
+            return newAccount;
+        } catch (e) {
+            throw new Error(e as string);
+        }
+    });
+        
+
+        const avatarUrl = avatars.getInitialsURL(name);
+
+        return await databases.createDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.userCollectionId,
+            ID.unique(),
+            { 
+                email, 
+                name, 
+                userId: newAccount.$id, 
+                avatar: avatarUrl
+            }
+        );
+    } catch (e) {
+        throw new Error(e as string);
+    }
+}
+
+export const signIn = async ({ email, password }: SignInParams) => {
+    return executeWithRetry(async () => {
+        try {
+            // Check if there's already an active session
+            try {
+                // If this succeeds, there's an active session
+                await account.get();
+                console.log("Session already exists, skipping login");
+                return true; // Return something to indicate success
+            } catch {
+                // No session exists, create one
+                const session = await account.createEmailPasswordSession(email, password);
+                return session;
+            }
+        } catch (e) {
+            console.log("Sign in error:", e);
+            throw new Error(e as string);
+        }
+    });
+}
+
+export const getCurrentUser = async () => {
+    try {
+        const currentAccount = await account.get();
+        if(!currentAccount) throw Error;
+
+        const currentUser = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.userCollectionId,
+            [Query.equal('userId', currentAccount.$id)]
+        )
+
+        if(!currentUser) throw Error;
+
+        return currentUser.documents[0];
+    } catch (e) {
+        console.log(e);
+        throw new Error(e as string);
+    }
+}
+
+export const checkEmailVerification = async () => {
+    try {
+        const currentAccount = await account.get();
+        return !!currentAccount.emailVerification;
+    } catch (e) {
+        console.log("Email verification check error:", e);
+        return false;
+    }
+}
+
+export const updateUserVerificationStatus = async (userId: string) => {
+    try {
+        // Since we don't have an emailVerified field in the database,
+        // we'll rely on Appwrite's built-in verification status
+        // Just return success since the verification is handled by Appwrite itself
+        return true;
+    } catch (e) {
+        console.log("Update verification status error:", e);
+        throw new Error(e as string);
+    }
+}
+
+export const sendVerificationEmail = async () => {
+    try {
+        return await account.createVerification(process.env.EXPO_PUBLIC_APP_URL + '/verify-email');
+    } catch (e) {
+        console.log("Send verification email error:", e);
+        throw new Error(e as string);
+    }
+}
+
+// export const getMenu = async ({ category, query }: GetMenuParams) => {
+//     try {
+//         const queries: string[] = [];
+
+//         if(category) queries.push(Query.equal('categories', category));
+//         if(query) queries.push(Query.search('name', query));
+
+//         const menus = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.menuCollectionId,
+//             queries,
+//         )
+
+//         return menus.documents;
+//     } catch (e) {
+//         throw new Error(e as string);
+//     }
+// }
+
+// export const getCategories = async () => {
+//     try {
+//         const categories = await databases.listDocuments(
+//             appwriteConfig.databaseId,
+//             appwriteConfig.categoriesCollectionId,
+//         )
+
+//         return categories.documents;
+//     } catch (e) {
+//         throw new Error(e as string);
+//     }
+// }

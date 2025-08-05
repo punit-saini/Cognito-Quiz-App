@@ -15,12 +15,16 @@ export const getRoomsForUser = async (userId: string) => {
   return response.documents;
 };
 
+
+
 import { fetchQuizQuestionsFromCategories } from '@/lib/quiz';
 import { Client, Databases } from 'react-native-appwrite';
 
+import { ENV } from '@/config';
+
 export const roomAppwriteConfig = {
-  endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!,
-  projectId: process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!,
+  endpoint: ENV.APPWRITE_ENDPOINT,
+  projectId: ENV.APPWRITE_PROJECT_ID,
   platform: 'com.appsbypunit.cognito',
   databaseId: '688cd4ae0034680b4f52', // <-- set your room database ID here
   collectionId: '688cd4b9000125023803', // <-- set your room collection ID here
@@ -243,6 +247,21 @@ export const closeRoomConnections = () => {
     // Each component should properly clean up its own subscriptions
   } catch (e) {
     console.log('Error with realtime connections:', e);
+  }
+};
+
+// Add a function to update the room status
+export const updateRoomStatus = async (roomId: string, status: string) => {
+  try {
+    return await roomDatabases.updateDocument(
+      roomAppwriteConfig.databaseId,
+      roomAppwriteConfig.collectionId,
+      roomId,
+      { status }
+    );
+  } catch (e) {
+    console.log('Error updating room status:', e);
+    throw e;
   }
 };
 

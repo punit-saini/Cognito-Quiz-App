@@ -1,0 +1,9 @@
+[auth]
+url=https://sentry.io/
+organization=punit-03
+project=react-native
+
+[defaults]
+url=https://sentry.io/
+org=punit-03
+project=react-native
