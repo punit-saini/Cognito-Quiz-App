@@ -1,6 +1,7 @@
 import { RANDOM_FACTS } from '@/constants/randomFacts';
 import useAuthStore from '@/store/auth.store';
 
+// import { uploadAllQuizQuestions } from '@/lib/quiz';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
@@ -47,6 +48,8 @@ export default function HomeScreen() {
     const randomIndex = Math.floor(Math.random() * REASONS_TO_PLAY.length);
     setReason(REASONS_TO_PLAY[randomIndex]);
   }, []);
+
+
 
   // Special indices with funny messages
   const specialIndices = [4, 9, 13, 19, 24, 29, 34, 39];

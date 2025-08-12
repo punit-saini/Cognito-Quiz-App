@@ -6,18 +6,30 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "cognito",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#181C24"
+    },
+    "androidStatusBar": {
+      "backgroundColor": "#10131A",
+      "barStyle": "light-content",
+      "translucent": true
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "userInterfaceStyle": "dark"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#181C24"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.sarveshtiwari.Cognito"
+      "package": "com.sarataylor.Cognito",
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "bundler": "metro",
@@ -32,7 +44,7 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#181C24"
         }
       ],
       [
@@ -50,7 +62,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "d7ef2ac5-cb47-4661-8ccf-0a951477da30"
+        "projectId": "eba43bc8-2de3-409a-b531-575c9a97af5a"
       }
     }
   }

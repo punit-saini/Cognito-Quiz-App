@@ -18,9 +18,7 @@ export async function uploadAllQuizQuestions() {
   }
 }
 
-// uploadAllQuizQuestions().then(() => {
-//   console.log('All questions processed');
-// });
+
 
 
 

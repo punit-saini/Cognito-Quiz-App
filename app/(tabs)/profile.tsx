@@ -1,5 +1,6 @@
 
 import { getRoomsForUser } from '@/lib/roomAppwrite';
+// import { uploadAllQuizQuestions } from '@/lib/quiz';
 import useAuthStore from '@/store/auth.store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -734,8 +735,51 @@ const Profile = () => {
               {/* Tab Content */}
               {renderTabContent()}
               
+              {/*
+              Admin: Upload All Quiz Questions Button
+              <View style={{ marginTop: 24, width: '100%', alignItems: 'center', marginBottom: 16 }}>
+                <TouchableOpacity
+                  onPress={async () => {
+                    await uploadAllQuizQuestions();
+                    alert('Quiz questions upload triggered! Check console for results.');
+                  }}
+                  activeOpacity={0.8}
+                  style={{
+                    width: '70%',
+                    overflow: 'hidden',
+                    borderRadius: 25,
+                    marginTop: 12,
+                    marginBottom: 8
+                  }}
+                >
+                  <LinearGradient
+                    colors={['#37B6E9', '#6a3de8']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={{ 
+                      padding: 16,
+                      alignItems: 'center',
+                      borderRadius: 25,
+                      shadowColor: '#37B6E9',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 8,
+                      elevation: 6
+                    }}
+                  >
+                    <Text style={{ 
+                      color: '#fff', 
+                      fontSize: 16, 
+                      fontFamily: 'Poppins-SemiBold' 
+                    }}>
+                      Upload All Quiz Questions
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+              */}
               {/* Logout Button */}
-              <View style={{ marginTop: 24, width: '100%', alignItems: 'center', marginBottom: 60 }}>
+              <View style={{ width: '100%', alignItems: 'center', marginBottom: 60 }}>
                 <TouchableOpacity
                   onPress={logout}
                   activeOpacity={0.8}
@@ -743,7 +787,7 @@ const Profile = () => {
                     width: '70%',
                     overflow: 'hidden',
                     borderRadius: 25,
-                    marginTop: 12
+                    marginTop: 0
                   }}
                 >
                   <LinearGradient
