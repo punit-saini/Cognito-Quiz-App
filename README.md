@@ -1,5 +1,5 @@
 # Cognito
-<img width="1024" height="500" alt="play store feature graphic (1)" src="https://github.com/user-attachments/assets/4266c3c3-b97d-4baa-bc89-9674cb3ae7e7" />
+<img width="512" height="250" alt="play store feature graphic (1)" src="https://github.com/user-attachments/assets/4266c3c3-b97d-4baa-bc89-9674cb3ae7e7" />
 
 
 Cognito is a modern, mobile-first quiz app that lets you play solo or challenge friends in real-time multiplayer trivia. Built with **React Native**, **Expo**, and **Appwrite**, Cognito offers a smooth, animated user experience and robust real-time features.
