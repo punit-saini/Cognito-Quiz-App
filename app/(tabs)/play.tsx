@@ -1,14 +1,19 @@
+import TabContentAnimator from '@/components/TabContentAnimator';
+import Header from '@/components/ui/Header';
 import { getRoomById, joinRoomAsGuest } from '@/lib/roomAppwrite';
 import useAuthStore from '@/store/auth.store';
+import { useIsFocused } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 export default function Play() {
   const [roomCode, setRoomCode] = useState('');
+    const isFocused = useIsFocused();
+  
   const { user } = useAuthStore();
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -52,20 +57,11 @@ export default function Play() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 20}
       >
         <SafeAreaView className="flex-1">
-          {/* Header with logo and title */}
-          <View className="flex-row items-center justify-center px-6 pt-4 mb-6">
-            <View className="flex-row items-center">
-              <Image
-                source={require('../../assets/images/cognito-logo.png')}
-                className="w-10 h-10 mr-2"
-                style={{ resizeMode: 'contain' }}
-              />
-              <Text className="text-2xl font-inter-bold text-white tracking-wide">Play Mode</Text>
-            </View>
-          </View>
+          <Header heading="Play Mode" />
           
           {/* Main content area */}
-          <View className="flex-1 px-6">
+          <TabContentAnimator focused={isFocused} style={{ flex: 1 }}>
+          <View className="px-6">
           {/* Title */}
           <View className="items-center mb-10">
             <Text className="text-3xl font-poppins-bold text-white">Choose Your Challenge</Text>
@@ -243,6 +239,7 @@ export default function Play() {
           {/* Extra space to avoid bottom navigation overlap */}
           <View className="h-20" />
         </View>
+        </TabContentAnimator>
       </SafeAreaView>
       </KeyboardAvoidingView>
     </LinearGradient>

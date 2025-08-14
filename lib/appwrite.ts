@@ -78,6 +78,7 @@ export const appwriteConfig = {
     platform: "com.appsbypunit.cognito",
     databaseId: '688adc4b00070847c88e',
     userCollectionId: '688adc5e00088013392e',
+    deletedUsersCollectionId: '689b685c00090036bb0f',
 }
 
 export const client = new Client();

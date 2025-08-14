@@ -2,7 +2,9 @@ import MultiplayerQuizScreen from '@/components/MultiplayerQuizScreen';
 import ResultsScreen from '@/components/ResultsScreen';
 import { disconnectRealtime, getRoomById, joinRoomAsGuest, subscribeToRoom, updateRoomStatus } from '@/lib/roomAppwrite';
 import useAuthStore from '@/store/auth.store';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { BlurView } from 'expo-blur';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, BackHandler, Text, TouchableOpacity, View } from 'react-native';
@@ -149,9 +151,78 @@ const GameScreen = () => {
   if (!room.guestUserId) {
     return (
       <View className="flex-1 justify-center items-center bg-slate-900">
-        <Text className="text-white text-xl">Waiting for friend to join...</Text>
-        <Text className="text-white mt-2">Room ID: {room.$id}</Text>
-        <Text className="text-white mt-2">Host User ID: {room.hostUserId}</Text>
+        <View style={{
+          borderRadius: 32,
+          backgroundColor: 'rgba(30,40,60,0.55)',
+          padding: 6,
+          marginBottom: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 12 },
+          shadowOpacity: 0.22,
+          shadowRadius: 32,
+          elevation: 16,
+        }}>
+          <BlurView intensity={50} tint="dark" style={{
+            borderRadius: 28,
+            paddingVertical: 36,
+            paddingHorizontal: 28,
+            alignItems: 'center',
+            width: 320,
+            backgroundColor: 'rgba(55, 182, 233, 0.10)',
+          }}>
+            <MaterialCommunityIcons name="account-clock" size={60} color="#37B6E9" style={{ marginBottom: 18 }} />
+            <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 8, fontFamily: 'Poppins-Bold' }}>
+              Waiting for friend to join...
+            </Text>
+            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 16, textAlign: 'center', marginBottom: 8, fontFamily: 'Inter' }}>
+              Share this Room ID:
+            </Text>
+            <Text style={{ color: '#37B6E9', fontSize: 28, fontFamily: 'Poppins-Bold', letterSpacing: 2, textAlign: 'center', marginBottom: 8 }}>
+              {room.$id}
+            </Text>
+            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, textAlign: 'center', fontFamily: 'Inter' }}>
+              Host User ID: {room.hostUserId}
+            </Text>
+            
+            {/* Cancel Button */}
+            <TouchableOpacity
+              onPress={() => {
+                Alert.alert(
+                  "Cancel Game",
+                  "Are you sure you want to exit this game?",
+                  [
+                    { text: "No", style: "cancel" },
+                    { 
+                      text: "Yes", 
+                      style: "destructive", 
+                      onPress: () => {
+                        disconnectRealtime();
+                        router.back();
+                      }
+                    }
+                  ]
+                );
+              }}
+              style={{
+                marginTop: 24,
+                paddingVertical: 12,
+                paddingHorizontal: 24,
+                borderRadius: 20,
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                borderWidth: 1,
+                borderColor: 'rgba(255, 255, 255, 0.2)',
+              }}
+            >
+              <Text style={{ 
+                color: '#FFF', 
+                fontFamily: 'Poppins-SemiBold',
+                fontSize: 16,
+              }}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </BlurView>
+        </View>
       </View>
     );
   }

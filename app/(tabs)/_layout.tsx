@@ -3,11 +3,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { Animated, Pressable, View } from 'react-native';
+import { Tabs, usePathname } from 'expo-router';
+import React, { useEffect } from 'react';
+import { BackHandler, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 
 const TAB_ICONS = {
   index: 'home-outline',
@@ -23,9 +22,7 @@ const TAB_LABELS = {
   profile: 'Profile',
 };
 
-const TAB_KEYS = ['index', 'play', 'results', 'profile'];
-
-function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+function SimpleTabBar({ state, navigation }: BottomTabBarProps) {
   return (
     <SafeAreaView edges={["bottom"]} style={{ backgroundColor: 'transparent' }}>
       <View style={{
@@ -58,13 +55,18 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         >
         {state.routes.map((route: any, idx: number) => {
           const isFocused = state.index === idx;
-          const onPress = () => {
-            if (!isFocused) navigation.navigate(route.name);
-          };
-          const scale = isFocused ? 1.2 : 1;
-          const color = isFocused ? '#37B6E9' : '#B0B8C1';
           const routeName = route.name as keyof typeof TAB_ICONS;
+          
           if (!(routeName in TAB_ICONS) || !(routeName in TAB_LABELS)) return null;
+          
+          const color = isFocused ? '#37B6E9' : '#B0B8C1';
+          
+          const onPress = () => {
+            if (!isFocused) {
+              navigation.navigate(route.name);
+            }
+          };
+          
           return (
             <Pressable
               key={route.key}
@@ -73,19 +75,18 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 width: 42, 
                 height: 42, 
                 borderRadius: 21,
-                backgroundColor: isFocused ? 'rgba(55, 182, 233, 0.15)' : 'transparent',
                 margin: 2,
                 alignItems: 'center',
                 justifyContent: 'center',
+                overflow: 'hidden',
+                backgroundColor: isFocused ? 'rgba(55, 182, 233, 0.15)' : 'transparent',
               }}
             >
-              <Animated.View style={{ transform: [{ scale }] }}>
-                <Ionicons
-                  name={TAB_ICONS[routeName] as any}
-                  size={24}
-                  color={color}
-                />
-              </Animated.View>
+              <Ionicons
+                name={TAB_ICONS[routeName] as any}
+                size={24}
+                color={color}
+              />
             </Pressable>
           );
         })}
@@ -95,7 +96,33 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   );
 }
 
+
 export default function TabLayout() {
+  const pathname = usePathname();
+  
+  // Handle back button to exit app when on the home tab
+  useEffect(() => {
+    const handleBackPress = () => {
+      // Check if we're on the main home tab (index)
+      if (pathname === '/(tabs)' || pathname === '/(tabs)/index') {
+        // Exit the app when back button is pressed while on home tab
+        BackHandler.exitApp();
+        return true; // Prevent default behavior
+      }
+      // Let the default back behavior happen for other tabs/screens
+      return false;
+    };
+
+    // Add back button listener
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      handleBackPress
+    );
+
+    // Clean up the listener when component unmounts
+    return () => backHandler.remove();
+  }, [pathname]);
+
   return (
     <LinearGradient
       colors={["#181C24", "#222834", "#10131A"]}
@@ -104,18 +131,41 @@ export default function TabLayout() {
       style={{ flex: 1 }}
     >
       <Tabs
-        tabBar={props => <AnimatedTabBar {...props} />}
+        tabBar={props => <SimpleTabBar {...props} />}
         screenOptions={{
           headerShown: false,
           tabBarStyle: { display: 'none' }, // Hide default bar
           // Using transparent background to let gradient show through
-          headerStyle: { backgroundColor: 'transparent' }
+          headerStyle: { backgroundColor: 'transparent' },
+          // Tab animation settings
+          tabBarShowLabel: false,
+          tabBarHideOnKeyboard: true,
         }}
       >
-        <Tabs.Screen name="index" options={{ title: 'Home' }} />
-        <Tabs.Screen name="play" options={{ title: 'Play' }} />
-        <Tabs.Screen name="results" options={{ title: 'Results' }} />
-        <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+        <Tabs.Screen 
+          name="index" 
+          options={{ 
+            title: 'Home',
+          }} 
+        />
+        <Tabs.Screen 
+          name="play" 
+          options={{ 
+            title: 'Play',
+          }} 
+        />
+        <Tabs.Screen 
+          name="results" 
+          options={{ 
+            title: 'Results',
+          }} 
+        />
+        <Tabs.Screen 
+          name="profile" 
+          options={{ 
+            title: 'Profile',
+          }} 
+        />
       </Tabs>
     </LinearGradient>
   );

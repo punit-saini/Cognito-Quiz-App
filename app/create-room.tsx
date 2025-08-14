@@ -2,6 +2,8 @@
 import { QUIZ_CATEGORIES } from '@/constants/QuizCategories';
 import { createRoom } from '@/lib/roomAppwrite';
 import useAuthStore from '@/store/auth.store';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
@@ -78,6 +80,7 @@ const CreateRoom = () => {
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: 'center' }} showsVerticalScrollIndicator={false}>
         <View style={{ alignItems: 'center', marginBottom: 16 }}>
+          <MaterialCommunityIcons name="account-group" size={48} color="#37B6E9" style={{ marginBottom: 8 }} />
           <Text style={{ fontSize: 24, fontWeight: 'bold', color: 'white', fontFamily: 'Poppins-Bold', marginBottom: 4 }}>
             Create Multiplayer Room
           </Text>
@@ -86,8 +89,7 @@ const CreateRoom = () => {
           </Text>
         </View>
 
-        <View style={{
-          backgroundColor: 'rgba(55, 182, 233, 0.10)',
+        <BlurView intensity={40} tint="dark" style={{
           borderRadius: 20,
           borderTopLeftRadius: 32,
           borderBottomRightRadius: 32,
@@ -100,6 +102,7 @@ const CreateRoom = () => {
           shadowOpacity: 0.08,
           shadowRadius: 8,
           elevation: 3,
+          backgroundColor: 'rgba(55, 182, 233, 0.10)',
         }}>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
             <TouchableOpacity
@@ -147,7 +150,7 @@ const CreateRoom = () => {
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+        </BlurView>
 
         <TouchableOpacity
           style={{

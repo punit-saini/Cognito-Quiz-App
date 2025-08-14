@@ -18,9 +18,10 @@ type ResultsScreenProps = {
     [key: string]: any;
   };
   userId: string;
+  onModalClose?: () => void; // Optional callback for closing modal in Results tab
 };
 
-const ResultsScreen: React.FC<ResultsScreenProps> = ({ room, userId }) => {
+const ResultsScreen: React.FC<ResultsScreenProps> = ({ room, userId, onModalClose }) => {
   const [loading, setLoading] = useState(true);
   const [hostScore, setHostScore] = useState(0);
   const [guestScore, setGuestScore] = useState(0);
@@ -31,6 +32,9 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ room, userId }) => {
   const initialWaitingState = !(room.hostFinished && room.guestFinished) && room.status !== 'finished';
   const [waitingForOpponent, setWaitingForOpponent] = useState(initialWaitingState);
   const [roomState, setRoomState] = useState(room);
+  
+  // If onModalClose is provided, we're in a modal view from the results tab
+  const isInModal = !!onModalClose;
 
   useEffect(() => {
     const calculateResults = () => {
@@ -426,24 +430,50 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ room, userId }) => {
         })}
       </ScrollView>
       
-      <TouchableOpacity
-        style={styles.homeButton}
-        onPress={() => {
-          // Make sure to disconnect before navigating away
-          disconnectRealtime();
-          // Navigate back to home screen
-          router.replace('/(tabs)' as any);
-        }}
-      >
-        <LinearGradient
-          colors={['#37B6E9', '#6a3de8']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.homeButtonGradient}
-        >
-          <Text style={styles.homeButtonText}>Return to Home</Text>
-        </LinearGradient>
-      </TouchableOpacity>
+      {/* Only show action buttons when not in a modal */}
+      {!isInModal && (
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.viewResultsButton}
+            onPress={() => {
+              // Make sure to disconnect before navigating away
+              disconnectRealtime();
+              // Navigate to results page
+              router.push('/tabs/Results' as any);
+            }}
+          >
+            <LinearGradient
+              colors={['#6a3de8', '#37B6E9']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.buttonGradient}
+            >
+              <Ionicons name="trophy" size={18} color="#fff" style={{marginRight: 8}} />
+              <Text style={styles.buttonText}>View Results</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.homeButton}
+            onPress={() => {
+              // Make sure to disconnect before navigating away
+              disconnectRealtime();
+              // Navigate back to home screen
+              router.replace('/tabs' as any);
+            }}
+          >
+            <LinearGradient
+              colors={['#37B6E9', '#6a3de8']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.buttonGradient}
+            >
+              <Ionicons name="home" size={18} color="#fff" style={{marginRight: 8}} />
+              <Text style={styles.buttonText}>Home</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -741,10 +771,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Inter',
   },
-  homeButton: {
+  buttonContainer: {
     marginHorizontal: 16,
     marginTop: 12,
     marginBottom: 24,
+    gap: 12,
+  },
+  viewResultsButton: {
     overflow: 'hidden',
     borderRadius: 25,
     shadowColor: '#37B6E9',
@@ -752,6 +785,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
+  },
+  homeButton: {
+    overflow: 'hidden',
+    borderRadius: 25,
+    shadowColor: '#37B6E9',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  buttonGradient: {
+    padding: 14,
+    alignItems: 'center',
+    borderRadius: 25,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: 'Poppins-SemiBold',
   },
   homeButtonGradient: {
     padding: 14,

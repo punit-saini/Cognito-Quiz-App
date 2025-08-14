@@ -1,6 +1,7 @@
-import { account, getCurrentUser } from "@/lib/appwrite";
+import { account, appwriteConfig, databases, getCurrentUser } from "@/lib/appwrite";
 import { User } from "@/type";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ID } from "react-native-appwrite";
 import { create } from 'zustand';
 
 // Keys for AsyncStorage
@@ -16,7 +17,9 @@ type AuthState = {
     setIsAuthenticated: (value: boolean) => void;
     setUser: (user: User | null) => void;
     setLoading: (loading: boolean) => void;
-
+    
+    deleteAccount: () => Promise<boolean>;
+    logout: () => Promise<void>;
     fetchAuthenticatedUser: () => Promise<void>;
     loadCachedUser: () => Promise<boolean>;
     clearUserCache: () => Promise<void>;
@@ -58,6 +61,81 @@ const isCacheValid = async (): Promise<boolean> => {
 };
 
 const useAuthStore = create<AuthState>((set) => ({
+    deleteAccount: async () => {
+        try {
+            console.log("Starting account data deletion process");
+            const userData = await getCurrentUser();
+            if (!userData) {
+                console.log("No user data found to delete");
+                throw new Error('No user data found');
+            }
+            
+            console.log("Found user data:", userData.$id);
+            
+            // Clear local storage data
+            try {
+                // Clear solo game results
+                const userKey = `solo_results_${userData.$id}`;
+                await AsyncStorage.removeItem(userKey);
+                
+                // Clear any other user-specific data
+                await AsyncStorage.removeItem('@user_preferences');
+            } catch (storageError) {
+                console.log('Failed to clear user data from storage:', storageError);
+            }
+            
+            // Add user to the deleted users collection
+            try {
+                console.log("Attempting to add user to deleted users collection");
+                // Current timestamp
+                const deletionTimestamp = new Date().toISOString();
+                // Scheduled deletion date (7 days from now)
+                const scheduledDeletionDate = new Date();
+                scheduledDeletionDate.setDate(scheduledDeletionDate.getDate() + 7);
+                
+                // Create a record in the deleted users collection
+                // Only using the userId field which we know exists in the collection
+                await databases.createDocument(
+                    appwriteConfig.databaseId,
+                    appwriteConfig.deletedUsersCollectionId,
+                    ID.unique(),
+                    {
+                        userId: userData.$id
+                    }
+                );
+                
+                console.log("Successfully added user to deleted users collection");
+            } catch (dbError) {
+                console.log('Failed to add user to deleted users collection:', dbError);
+                console.log('Error details:', JSON.stringify(dbError));
+                // Continue even if this fails
+            }
+            
+            // Log out the user by clearing sessions
+            try {
+                await account.deleteSessions();
+            } catch (sessionError) {
+                console.log('Failed to delete all sessions:', sessionError);
+                
+                // Try to delete current session as fallback
+                try {
+                    await account.deleteSession('current');
+                } catch (currentSessionError) {
+                    console.log('Failed to delete current session:', currentSessionError);
+                }
+            }
+            
+            // Update auth state
+            await saveUserToCache(null);
+            set({ isAuthenticated: false, user: null });
+            
+            return true;
+        } catch (error) {
+            console.log('Failed to delete account:', error);
+            throw error;
+        }
+    },
+    
     logout: async () => {
         try {
             // First try to delete the current session

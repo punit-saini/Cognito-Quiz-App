@@ -16,6 +16,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  Vibration,
   View
 } from 'react-native';
 
@@ -145,14 +146,20 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ name, categories }) => {
     return () => backHandler.remove();
   }, []);
   
+  // Animation for option selection
+  const optionAnim = useRef(new Animated.Value(1)).current;
+  
   // Animate when changing questions
   const animateQuestionTransition = (direction: 'next' | 'prev') => {
-    // Fade out
+    // Complete fade out
     Animated.timing(fadeAnim, {
       toValue: 0,
-      duration: 150,
+      duration: 120,
       useNativeDriver: true
     }).start(() => {
+      // Set the slide position immediately
+      slideAnim.setValue(direction === 'next' ? width * 0.2 : -width * 0.2);
+      
       // Change question index
       if (direction === 'next') {
         setCurrentIdx(currentIdx + 1);
@@ -160,22 +167,24 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ name, categories }) => {
         setCurrentIdx(currentIdx - 1);
       }
       
-      // Slide in from correct direction
-      slideAnim.setValue(direction === 'next' ? width * 0.2 : -width * 0.2);
-      
-      // Fade & slide in
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 250,
-          useNativeDriver: true
-        })
-      ]).start();
+      // Add a delay to ensure state updates completely before animation starts
+      setTimeout(() => {
+        // Fade & slide in - use staggered timing for smoother effect
+        Animated.stagger(50, [
+          // Start fade-in first
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 220,
+            useNativeDriver: true
+          }),
+          // Then slide in
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 220,
+            useNativeDriver: true
+          })
+        ]).start();
+      }, 50);
     });
   };
 
@@ -308,21 +317,37 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ name, categories }) => {
                 })}
               </ScrollView>
               
-              <TouchableOpacity
-                style={styles.backToHomeButton}
-                onPress={() => {
-                  router.replace('/' as any);
-                }}
-              >
-                <LinearGradient
-                  colors={['#37B6E9', '#6a3de8']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.backToHomeGradient}
+              <View style={styles.resultButtonsContainer}>
+                <TouchableOpacity
+                  style={styles.viewResultsButton}
+                  onPress={() => router.push('/tabs/Results' as any)}
                 >
-                  <Text style={styles.backToHomeText}>Back to Home</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+                  <LinearGradient
+                    colors={['#6a3de8', '#37B6E9']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.viewResultsGradient}
+                  >
+                    <Ionicons name="trophy" size={18} color="#fff" style={{marginRight: 8}} />
+                    <Text style={styles.viewResultsText}>View Results</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={styles.homeButton}
+                  onPress={() => router.replace('/' as any)}
+                >
+                  <LinearGradient
+                    colors={['#37B6E9', '#6a3de8']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.homeButtonGradient}
+                  >
+                    <Ionicons name="home" size={18} color="#fff" style={{marginRight: 8}} />
+                    <Text style={styles.homeButtonText}>Home</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         ) : (
@@ -332,13 +357,15 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ name, categories }) => {
                 styles.questionCardContainer,
                 { 
                   opacity: fadeAnim,
-                  transform: [{ translateX: slideAnim }] 
+                  transform: [{ translateX: slideAnim }],
+                  backgroundColor: 'transparent',
+                  overflow: 'hidden'
                 }
               ]}
             >
               <LinearGradient
                 colors={["rgba(24, 28, 36, 0.95)", "rgba(34, 40, 52, 0.95)", "rgba(16, 19, 26, 0.95)"]}
-                style={styles.questionCard}
+                style={[styles.questionCard, { backgroundColor: 'transparent' }]}
               >
                 <View style={styles.questionHeader}>
                   <View style={styles.questionNumber}>
@@ -353,56 +380,93 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ name, categories }) => {
                   {questions[currentIdx].question}
                 </Text>
                 
-                <View style={styles.optionsContainer}>
+                <View style={[styles.optionsContainer, { backgroundColor: 'transparent' }]}>
                   {questions[currentIdx].options && questions[currentIdx].options.map((opt: string, i: number) => (
-                    <TouchableOpacity
+                    <Animated.View
                       key={i}
-                      style={[
-                        styles.optionButton,
-                        responses[currentIdx] === opt ? styles.selectedOption : {}
-                      ]}
-                      onPress={() => setResponses({ ...responses, [currentIdx]: opt })}
+                      style={{
+                        transform: [
+                          { scale: responses[currentIdx] === opt ? optionAnim : 1 }
+                        ],
+                        backgroundColor: 'transparent',
+                        opacity: 1
+                      }}
                     >
-                      <LinearGradient
-                        colors={responses[currentIdx] === opt ?
-                          ['#37B6E9', '#6a3de8'] :
-                          ['#232442', '#1E1F35']}
-                        start={{ x: 0, y: 0 }}
-                        end={responses[currentIdx] === opt ? { x: 1, y: 0 } : { x: 1, y: 1 }}
-                        style={styles.optionGradient}
+                      <TouchableOpacity
+                        activeOpacity={0.9} // Higher value means less opacity change on press
+                        style={[
+                          styles.optionButton,
+                          responses[currentIdx] === opt ? styles.selectedOption : {}
+                        ]}
+                        onPress={() => {
+                          // Add vibration feedback when option is selected
+                          Vibration.vibrate(50);
+                          
+                          // Save the response
+                          setResponses({ ...responses, [currentIdx]: opt });
+                          
+                          // Animate the selection
+                          Animated.sequence([
+                            Animated.timing(optionAnim, {
+                              toValue: 1.05,
+                              duration: 100,
+                              useNativeDriver: true
+                            }),
+                            Animated.timing(optionAnim, {
+                              toValue: 1,
+                              duration: 100,
+                              useNativeDriver: true
+                            })
+                          ]).start();
+                          
+                          // Auto-advance to next question after short delay
+                          setTimeout(() => {
+                            if (currentIdx < questions.length - 1) {
+                              animateQuestionTransition('next');
+                            }
+                          }, 300);
+                        }}
                       >
-                        <View style={styles.optionTextContainer}>
-                          <Text style={styles.optionText}>{opt}</Text>
-                        </View>
-                      </LinearGradient>
-                    </TouchableOpacity>
+                        <LinearGradient
+                          colors={responses[currentIdx] === opt ?
+                            ['#37B6E9', '#6a3de8'] :
+                            ['rgba(55, 182, 233, 0.1)', 'rgba(106, 61, 232, 0.05)']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                          style={[styles.optionGradient, { backgroundColor: 'transparent' }]}
+                        >
+                          <View style={[styles.optionTextContainer, { backgroundColor: 'transparent' }]}>
+                            <Text 
+                              style={[
+                                styles.optionText,
+                                responses[currentIdx] === opt ? styles.selectedOptionText : {},
+                                { backgroundColor: 'transparent' }
+                              ]}
+                            >
+                              {opt}
+                            </Text>
+                          </View>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    </Animated.View>
                   ))}
                 </View>
               </LinearGradient>
             </Animated.View>
             
-            <View style={styles.navigationContainer}>
-              <TouchableOpacity
-                style={[styles.navButton, currentIdx === 0 ? styles.disabledButton : {}]}
-                disabled={currentIdx === 0}
-                onPress={() => animateQuestionTransition('prev')}
-              >
-                <Ionicons name="chevron-back" size={24} color={currentIdx === 0 ? "#555" : "#fff"} />
-                <Text style={[styles.navButtonText, currentIdx === 0 ? styles.disabledText : {}]}>Prev</Text>
-              </TouchableOpacity>
-              
-              <Text style={styles.pageIndicator}>
-                {currentIdx + 1} / {questions.length}
-              </Text>
-              
-              <TouchableOpacity
-                style={[styles.navButton, currentIdx === questions.length - 1 ? styles.disabledButton : {}]}
-                disabled={currentIdx === questions.length - 1}
-                onPress={() => animateQuestionTransition('next')}
-              >
-                <Text style={[styles.navButtonText, currentIdx === questions.length - 1 ? styles.disabledText : {}]}>Next</Text>
-                <Ionicons name="chevron-forward" size={24} color={currentIdx === questions.length - 1 ? "#555" : "#fff"} />
-              </TouchableOpacity>
+            <View style={styles.infoContainer}>
+              <View style={styles.infoBox}>
+                <Ionicons name="information-circle" size={18} color="#37B6E9" style={styles.infoIcon} />
+                <Text style={styles.infoText}>
+                  Select an option to continue
+                </Text>
+              </View>
+              <View style={styles.indicator}>
+                <View style={[styles.dot, styles.activeDot]} />
+                <Text style={styles.indicatorText}>
+                  {currentIdx + 1} / {questions.length}
+                </Text>
+              </View>
             </View>
             
             {/* Show submit button only on last question */}
@@ -424,6 +488,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ name, categories }) => {
                   end={{ x: 1, y: 0 }}
                   style={styles.submitGradient}
                 >
+                  <Ionicons name="checkmark-circle" size={18} color="#fff" style={{marginRight: 8}} />
                   <Text style={styles.submitText}>Submit Answers</Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -623,18 +688,50 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     marginTop: 8,
   },
-  backToHomeButton: {
-    overflow: 'hidden',
-    borderRadius: 25,
+  resultButtonsContainer: {
     marginTop: 20,
     marginBottom: 20,
+    gap: 12,
   },
-  backToHomeGradient: {
+  viewResultsButton: {
+    overflow: 'hidden',
+    borderRadius: 25,
+    shadowColor: '#6a3de8',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  viewResultsGradient: {
     padding: 14,
     alignItems: 'center',
     borderRadius: 25,
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
-  backToHomeText: {
+  viewResultsText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: 'Poppins-SemiBold',
+  },
+  homeButton: {
+    overflow: 'hidden',
+    borderRadius: 25,
+    shadowColor: '#37B6E9',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  homeButtonGradient: {
+    padding: 14,
+    alignItems: 'center',
+    borderRadius: 25,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  homeButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
@@ -644,11 +741,11 @@ const styles = StyleSheet.create({
   // Quiz screen styles
   quizContainer: {
     flex: 1,
-    padding: 16,
+    padding: 12,
   },
   questionCardContainer: {
-    flex: 1,
-    marginBottom: 16,
+    flex: 0.85, // Reduced from 1 to make the card more compact
+    marginBottom: 12,
     shadowColor: '#37B6E9',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.2,
@@ -659,7 +756,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderTopLeftRadius: 24,
     borderBottomRightRadius: 24,
-    padding: 20,
+    padding: 16, // Reduced padding from 20 to 16
     flex: 1,
     borderWidth: 1,
     borderColor: 'rgba(55, 182, 233, 0.18)',
@@ -667,12 +764,12 @@ const styles = StyleSheet.create({
   questionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12, // Reduced from 16
   },
   questionNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: 'rgba(55, 182, 233, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -688,22 +785,26 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 13,
     fontFamily: 'Inter',
+    flex: 1,
   },
   questionText: {
-    fontSize: 18,
+    fontSize: 17, // Reduced from 18
     color: 'white',
-    marginBottom: 24,
-    lineHeight: 26,
+    marginBottom: 16, // Reduced from 24
+    lineHeight: 24, // Reduced from 26
     fontFamily: 'Poppins-SemiBold',
   },
   optionsContainer: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
   },
   optionButton: {
-    marginBottom: 12,
+    marginBottom: 10,
     borderRadius: 12,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(55, 182, 233, 0.15)',
+    backgroundColor: 'transparent',
   },
   selectedOption: {
     shadowColor: '#37B6E9',
@@ -712,23 +813,31 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
     borderWidth: 1,
-    borderColor: 'rgba(55, 182, 233, 0.4)',
+    borderColor: 'rgba(55, 182, 233, 0.6)',
     borderRadius: 12,
+    backgroundColor: 'transparent',
   },
   optionGradient: {
-    padding: 16,
+    padding: 14,
     borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'transparent',
   },
   optionTextContainer: {
     backgroundColor: 'transparent',
     flex: 1,
   },
   optionText: {
-    color: 'white',
+    color: '#37B6E9',
     fontSize: 15,
     fontFamily: 'Inter',
+    backgroundColor: 'transparent',
+    opacity: 1,
+  },
+  selectedOptionText: {
+    color: 'white',
+    fontWeight: 'bold',
     backgroundColor: 'transparent',
   },
   navigationContainer: {
@@ -775,12 +884,59 @@ const styles = StyleSheet.create({
     padding: 14,
     alignItems: 'center',
     borderRadius: 25,
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   submitText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
     fontFamily: 'Poppins-SemiBold',
+  },
+  
+  // Info container styles (from multiplayer quiz)
+  infoContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(55, 182, 233, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    maxWidth: '70%',
+  },
+  infoIcon: {
+    marginRight: 6,
+  },
+  infoText: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 12,
+    fontFamily: 'Inter',
+  },
+  indicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#37B6E9',
+    marginRight: 6,
+  },
+  activeDot: {
+    backgroundColor: '#6a3de8',
+  },
+  indicatorText: {
+    color: 'white',
+    fontSize: 14,
+    fontFamily: 'Inter',
   },
 });
 

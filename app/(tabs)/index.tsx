@@ -1,7 +1,8 @@
+import TabContentAnimator from '@/components/TabContentAnimator';
+import Header from '@/components/ui/Header';
 import { RANDOM_FACTS } from '@/constants/randomFacts';
 import useAuthStore from '@/store/auth.store';
-
-// import { uploadAllQuizQuestions } from '@/lib/quiz';
+import { useIsFocused } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
@@ -37,6 +38,7 @@ const REASONS_TO_PLAY = [
 export default function HomeScreen() {
   const { isAuthenticated, user } = useAuthStore();
   const router = useRouter();
+  const isFocused = useIsFocused();
   const [fact, setFact] = useState('');
   const [factIndex, setFactIndex] = useState(0);
   const [shownFacts, setShownFacts] = useState<number[]>([]);
@@ -124,74 +126,45 @@ export default function HomeScreen() {
       className="flex-1"
     >
       <SafeAreaView className="flex-1">
-        {/* Header with logo and app name */}
-        <View className="flex-row items-center justify-between px-6 pt-2">
-          <View className="flex-row items-center">
-            <Image
-              source={require('../../assets/images/cognito-logo.png')}
-              className="w-10 h-10 mr-2"
-              style={{ resizeMode: 'contain' }}
-            />
-            <Text className="text-2xl font-inter-bold text-white tracking-wide">Cognito</Text>
-          </View>
-          
-          {isAuthenticated ? (
-            <TouchableOpacity onPress={() => router.push('/profile' as any)}>
-              <View className="w-10 h-10 rounded-full bg-primary/30 items-center justify-center">
-                <Text className="text-white font-inter-bold text-lg">
-                  {user?.name?.charAt(0).toUpperCase()}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ) : (
-            <View className="flex-row space-x-3">
-              <TouchableOpacity onPress={() => router.push('/sign-in' as any)}>
-                <View className="px-3 py-1.5 rounded-lg bg-surface/50 border border-white/10">
-                  <Text className="text-white font-poppins-semibold text-sm">Sign In</Text>
-                </View>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => router.push('/sign-up' as any)}>
-                <View className="px-3 py-1.5 rounded-lg bg-primary/70">
-                  <Text className="text-white font-poppins-semibold text-sm">Sign Up</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+        <Header heading="Cognito" showUser />
 
-        {/* Main content */}
-        <View className="flex-1 px-6 pt-8">
-          {/* Welcome message with waving emoji */}
-          <View className="flex-row items-center mb-4">
-            <Text className="text-3xl font-poppins-bold text-white">
-              {isAuthenticated ? `Hey there, ${user?.name?.split(' ')[0]}!` : 'Hello there!'}
-            </Text>
-            <Animated.View
-              style={{
-                transform: [{
-                  rotate: fadeAnim.interpolate({
-                    inputRange: [0, 0.5, 1],
-                    outputRange: ['0deg', '20deg', '0deg']
-                  })
-                }]
-              }}
-            >
-              <Text className="text-3xl ml-2">👋</Text>
-            </Animated.View>
-          </View>
-          
-          {/* Reason to play */}
-          <Text className="text-lg font-poppins text-text-muted mb-8">
-            {reason}
-          </Text>
-          
-          {/* Challenge message */}
-          <View className="bg-surface/30 px-5 py-4 rounded-xl mb-6">
-            <Text className="text-base font-inter text-white text-center">
-              You can challenge a friend or play solo if you haven't got one 😉
+        {/* Main content with transition animations */}
+        <TabContentAnimator focused={isFocused} style={{ flex: 1 }}>
+          <View className="flex-1 px-6 pt-4">
+
+          {/* Welcome message with waving emoji and reason to play */}
+          <View className="mb-6">
+            <View className="flex-row items-center mb-1">
+              <Text className="text-3xl font-poppins-bold text-white">
+                {isAuthenticated ? `Hey there, ${user?.name?.split(' ')[0]}!` : 'Hello there!'}
+              </Text>
+              <Animated.View
+                style={{
+                  transform: [{
+                    rotate: fadeAnim.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: ['0deg', '20deg', '0deg']
+                    })
+                  }]
+                }}
+              >
+                <Text className="text-3xl ml-2">👋</Text>
+              </Animated.View>
+            </View>
+            <Text className="text-base font-poppins text-text-muted mb-1">
+              {reason}
             </Text>
           </View>
+
+          {/* Compact call-to-action section */}
+          <View className="bg-surface/30 px-4 py-3 rounded-xl mb-3 border border-primary/20">
+            <Text className="text-base font-poppins-semibold text-white text-center">
+              Play solo or challenge a friend. Every quiz makes you smarter!
+            </Text>
+          </View>
+
           
+
           {/* Play button - smaller, more rounded design */}
           <View className="mt-4 mb-10 items-center">
             <LinearGradient
@@ -274,7 +247,9 @@ export default function HomeScreen() {
               </View>
             </View>
           </View>
-        </View>
+          </View>
+        </TabContentAnimator>
+        {/* </View> */}
       </SafeAreaView>
 
     </LinearGradient>

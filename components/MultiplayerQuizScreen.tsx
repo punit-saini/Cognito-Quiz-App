@@ -13,6 +13,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  Vibration,
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -135,6 +136,9 @@ const MultiplayerQuizScreen: React.FC<MultiplayerQuizScreenProps> = ({ room, use
   }, [timer, currentIdx, questions]);
 
   const handleOptionSelect = (option: string) => {
+    // Add vibration feedback when option is selected
+    Vibration.vibrate(50); // Short vibration
+    
     // Save the response for this question
     const questionId = currentQuestion.$id || `q${currentIdx}`;
     const updatedResponses = {

@@ -1,16 +1,20 @@
 
+import TabContentAnimator from '@/components/TabContentAnimator';
 import { getRoomsForUser } from '@/lib/roomAppwrite';
+import { useIsFocused } from '@react-navigation/native';
+
 // import { uploadAllQuizQuestions } from '@/lib/quiz';
+import Header from '@/components/ui/Header';
 import useAuthStore from '@/store/auth.store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Profile = () => {
-  const { isAuthenticated, user, logout } = useAuthStore() as any;
+  const { isAuthenticated, user, logout, deleteAccount } = useAuthStore() as any;
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('about');
   const [loading, setLoading] = useState(true);
@@ -20,6 +24,8 @@ const Profile = () => {
   const [showContactSupport, setShowContactSupport] = useState(false);
   const [showSubmitFeedback, setShowSubmitFeedback] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+    const isFocused = useIsFocused();
+  
   
   // Game stats state
   const [stats, setStats] = useState({
@@ -30,6 +36,7 @@ const Profile = () => {
     soloAverageScore: 0,
     multiAverageScore: 0
   });
+
   
   // Fetch user stats on component mount
   useEffect(() => {
@@ -649,26 +656,13 @@ const Profile = () => {
       style={{ flex: 1 }}
     >
       <SafeAreaView style={{ flex: 1 }}>
+        <Header heading="My Profile" />
+          <TabContentAnimator focused={isFocused} style={{ flex: 1 }}>
         <ScrollView 
           style={{ flex: 1 }}
-          contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Header with logo */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
-            <Image
-              source={require('../../assets/images/cognito-logo.png')}
-              style={{ width: 40, height: 40, marginRight: 8, resizeMode: 'contain' }}
-            />
-            <Text style={{ 
-              fontSize: 24, 
-              fontWeight: 'bold', 
-              color: 'white', 
-              fontFamily: 'Poppins-Bold' 
-            }}>
-              My Profile
-            </Text>
-          </View>
           
           {isAuthenticated ? (
             <>
@@ -779,7 +773,7 @@ const Profile = () => {
               </View>
               */}
               {/* Logout Button */}
-              <View style={{ width: '100%', alignItems: 'center', marginBottom: 60 }}>
+              <View style={{ width: '100%', alignItems: 'center', marginBottom: 20 }}>
                 <TouchableOpacity
                   onPress={logout}
                   activeOpacity={0.8}
@@ -811,6 +805,78 @@ const Profile = () => {
                       fontFamily: 'Poppins-SemiBold' 
                     }}>
                       Logout
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+              
+              {/* Delete Profile Button */}
+              <View style={{ width: '100%', alignItems: 'center', marginBottom: 60 }}>
+                <TouchableOpacity
+                  onPress={() => {
+                    Alert.alert(
+                      "Delete Account",
+                      "Are you sure you want to delete your account? Your account will be scheduled for deletion in 7 days. During this period, you can sign in again to cancel the deletion process.",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        { 
+                          text: "Delete Account", 
+                          style: "destructive", 
+                          onPress: async () => {
+                            try {
+                              await deleteAccount();
+                              
+                              // Show success message
+                              Alert.alert(
+                                "Account Scheduled for Deletion",
+                                "Your account has been scheduled for deletion and will be permanently removed in 7 days. You will now be signed out.",
+                                [
+                                  {
+                                    text: "OK",
+                                    onPress: () => router.replace('/sign-in' as any)
+                                  }
+                                ]
+                              );
+                            } catch (error) {
+                              console.log("Error scheduling account deletion:", error);
+                              Alert.alert("Error", "Failed to schedule account deletion. Please try again later.");
+                            }
+                          }
+                        }
+                      ]
+                    );
+                  }}
+                  activeOpacity={0.8}
+                  style={{
+                    width: '70%',
+                    overflow: 'hidden',
+                    borderRadius: 25,
+                    marginTop: 0
+                  }}
+                >
+                  <LinearGradient
+                    colors={['rgba(100, 100, 100, 0.8)', 'rgba(60, 60, 60, 0.9)']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={{ 
+                      padding: 16,
+                      alignItems: 'center',
+                      borderRadius: 25,
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 8,
+                      elevation: 6,
+                      borderWidth: 1,
+                      borderColor: 'rgba(255, 50, 50, 0.3)'
+                    }}
+                  >
+                    <Text style={{ 
+                      color: '#FF6363', 
+                      fontSize: 16, 
+                      fontFamily: 'Poppins-SemiBold' 
+                    }}>
+                      Delete Account
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -882,6 +948,7 @@ const Profile = () => {
             </View>
           )}
         </ScrollView>
+        </TabContentAnimator>
       </SafeAreaView>
     </LinearGradient>
   );

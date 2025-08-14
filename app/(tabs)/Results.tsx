@@ -1,4 +1,5 @@
 import ResultsScreen from '@/components/ResultsScreen';
+import Header from '@/components/ui/Header';
 import { getRoomsForUser } from '@/lib/roomAppwrite';
 import useAuthStore from '@/store/auth.store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -302,25 +303,11 @@ export default function Results() {
         end={{ x: 1, y: 1 }}
         style={{ flex: 1 }}
       >
-        <SafeAreaView style={{ flex: 1, paddingHorizontal: 16, paddingTop: 16 }}>
-          {/* Header with logo */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
-            <Image
-              source={require('../../assets/images/cognito-logo.png')}
-              style={{ width: 40, height: 40, marginRight: 8, resizeMode: 'contain' }}
-            />
-            <Text style={{ 
-              fontSize: 24, 
-              fontWeight: 'bold', 
-              color: 'white', 
-              fontFamily: 'Poppins-Bold' 
-            }}>
-              Game Results
-            </Text>
-          </View>
+        <SafeAreaView style={{ flex: 1}}>
+          <Header heading="Quiz Results" />
           
           {/* Tab Selector - Simplified Version */}
-          <View style={{ marginBottom: 24, alignItems: 'center' }}>
+          <View className='px-6 pt-8' style={{ marginBottom: 24, alignItems: 'center' }}>
             <View 
               style={{ 
                 flexDirection: 'row',
@@ -381,9 +368,11 @@ export default function Results() {
       
           {/* Content based on active tab */}
           {loading ? (
-            <ActivityIndicator size="large" color="#37B6E9" style={{ marginTop: 32 }} />
+            <View style={{ paddingHorizontal: 16, alignItems: 'center' }}>
+              <ActivityIndicator size="large" color="#37B6E9" style={{ marginTop: 32 }} />
+            </View>
           ) : activeTab === 'multiplayer' && !isAuthenticated ? (
-            <View style={{ alignItems: 'center', marginTop: 40 }}>
+            <View style={{ paddingHorizontal: 16, alignItems: 'center', marginTop: 40 }}>
               <Text style={{ color: '#fff', fontSize: 16, textAlign: 'center', marginBottom: 20 }}>
                 Please login to view your multiplayer game history
               </Text>
@@ -410,7 +399,7 @@ export default function Results() {
               </TouchableOpacity>
             </View>
           ) : currentGames.length === 0 ? (
-            <View style={{ alignItems: 'center', marginTop: 32 }}>
+            <View style={{ paddingHorizontal: 16, alignItems: 'center', marginTop: 32 }}>
               <Image
                 source={require('../../assets/images/cognito-logo.png')}
                 style={{ width: 60, height: 60, opacity: 0.3, marginBottom: 16, resizeMode: 'contain' }}
@@ -429,7 +418,7 @@ export default function Results() {
               data={soloGames}
               keyExtractor={(_, index) => `solo-${index}`}
               renderItem={renderSoloResultItem}
-              contentContainerStyle={{ paddingBottom: 20 }}
+              contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
               showsVerticalScrollIndicator={false}
               refreshing={refreshing}
               onRefresh={handleRefresh}
@@ -439,7 +428,7 @@ export default function Results() {
               data={multiplayerGames}
               keyExtractor={item => item.$id}
               renderItem={renderResultItem}
-              contentContainerStyle={{ paddingBottom: 20 }}
+              contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
               showsVerticalScrollIndicator={false}
               refreshing={refreshing}
               onRefresh={handleRefresh}
@@ -478,7 +467,11 @@ export default function Results() {
                 <Text style={{ color: '#37B6E9', fontWeight: 'bold' }}>{'< Back to Results'}</Text>
               </TouchableOpacity>
             </View>
-            {selectedRoom && <ResultsScreen room={selectedRoom} userId={user?.$id || ''} />}
+            {selectedRoom && <ResultsScreen 
+              room={selectedRoom} 
+              userId={user?.$id || ''} 
+              onModalClose={() => setSelectedRoom(null)}
+            />}
           </SafeAreaView>
         </LinearGradient>
       </Modal>

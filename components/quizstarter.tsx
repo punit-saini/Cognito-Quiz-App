@@ -2,29 +2,40 @@ import { QUIZ_CATEGORIES } from '@/constants/QuizCategories';
 import useAuthStore from '@/store/auth.store';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuizScreen from './QuizScreen';
 
 const QuizStarter = () => {
   const { isAuthenticated, user } = useAuthStore();
-  const [name, setName] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [gameStarted, setGameStarted] = useState(false);
 
   const handleCategoryPress = (category: string) => {
+    if (category === 'All Categories') {
+      if (selectedCategories.includes('All Categories')) {
+        setSelectedCategories([]);
+      } else {
+        setSelectedCategories(['All Categories']);
+      }
+      return;
+    }
     if (selectedCategories.includes(category)) {
       setSelectedCategories(selectedCategories.filter(c => c !== category));
-    } else if (selectedCategories.length < 5) {
+    } else if (selectedCategories.length < 5 && !selectedCategories.includes('All Categories')) {
       setSelectedCategories([...selectedCategories, category]);
+    }
+    // If any other category is selected, remove 'All Categories'
+    if (selectedCategories.includes('All Categories')) {
+      setSelectedCategories([category]);
     }
   };
 
-  const canStart = isAuthenticated || name.trim().length > 0;
+  const canStart = true;
 
   if (gameStarted) {
     return (
       <QuizScreen
-        name={isAuthenticated ? user?.name ?? '' : name}
+        name={isAuthenticated ? user?.name ?? '' : ''}
         categories={selectedCategories.map(cat => cat.replace(/\s+/g, '-'))}
       />
     );
@@ -39,23 +50,38 @@ const QuizStarter = () => {
         style={styles.gradientContainer}
       >
         <View style={styles.contentContainer}>
-          {/* User Input Section (only for non-authenticated users) */}
-          {!isAuthenticated && (
-            <View style={styles.nameInputContainer}>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter your name to play"
-                placeholderTextColor="rgba(255, 255, 255, 0.4)"
-                value={name}
-                onChangeText={setName}
-              />
-            </View>
-          )}
+
 
           {/* Categories Section */}
           <View style={styles.categoriesSection}>
             <Text style={styles.sectionTitle}>Select categories (max 5):</Text>
             <View style={styles.categoriesContainer}>
+              {/* All Categories Option */}
+              <TouchableOpacity
+                key="All Categories"
+                style={[
+                  styles.categoryButton,
+                  selectedCategories.includes('All Categories') ? styles.selectedCategory : {}
+                ]}
+                onPress={() => handleCategoryPress('All Categories')}
+                disabled={selectedCategories.length > 0 && !selectedCategories.includes('All Categories')}
+              >
+                <LinearGradient
+                  colors={
+                    selectedCategories.includes('All Categories')
+                      ? ['#37B6E9', '#6a3de8']
+                      : ['#232442', '#1E1F35']
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.categoryGradient}
+                >
+                  <Text style={styles.categoryText}>
+                    All Categories
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              {/* Other Categories */}
               {QUIZ_CATEGORIES.map(category => (
                 <TouchableOpacity
                   key={category}
@@ -65,7 +91,8 @@ const QuizStarter = () => {
                   ]}
                   onPress={() => handleCategoryPress(category)}
                   disabled={
-                    !selectedCategories.includes(category) && selectedCategories.length >= 5
+                    (selectedCategories.includes('All Categories')) ||
+                    (!selectedCategories.includes(category) && selectedCategories.length >= 5)
                   }
                 >
                   <LinearGradient
