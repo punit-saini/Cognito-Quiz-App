@@ -55,14 +55,14 @@ Cognito is a modern, mobile-first quiz app that lets you play solo or challenge 
 ---
 
 ### 📸 Screenshots
+![2](https://github.com/user-attachments/assets/52f03d7b-4350-4d1e-99a3-cdff0254fb63)
+![3](https://github.com/user-attachments/assets/eac02b95-46a0-4d04-8847-655b1291ed42)
+![6](https://github.com/user-attachments/assets/7e6af007-830a-49fe-a40c-cca011064472)
+![5](https://github.com/user-attachments/assets/5bd789fa-18b2-4532-9e9b-8949de8d3166)
+![1](https://github.com/user-attachments/assets/5e210f60-c58f-4979-97a9-8e938bedbc8f)
+![4](https://github.com/user-attachments/assets/54aad312-80e9-4026-9536-37bf0df94b30)
 
-![WhatsApp Image 2025-08-14 at 12 32 53 PM (1)](https://github.com/user-attachments/assets/2784c04c-11a1-4ef1-b772-3111d101d375)
-![WhatsApp Image 2025-08-14 at 12 32 53 PM (1)](https://github.com/user-attachments/assets/490da2be-b9d3-4e12-bb39-18a5b4def1df)
-![WhatsApp Image 2025-08-14 at 12 35 02 PM](https://github.com/user-attachments/assets/827c2aee-5f7f-4a21-be2e-a374dc9b67d3)
-![WhatsApp Image 2025-08-14 at 12 32 55 PM](https://github.com/user-attachments/assets/98b583f2-bc24-4112-a7e9-ef97e6fd6bd0)
-![WhatsApp Image 2025-08-14 at 12 32 53 PM](https://github.com/user-attachments/assets/3eab66f6-498e-47db-8ec3-40a95fbe4572)
-![WhatsApp Image 2025-08-14 at 12 32 54 PM](https://github.com/user-attachments/assets/d5049c12-b42e-4c90-b17b-eae0affe7fc3)
-![WhatsApp Image 2025-08-14 at 12 32 54 PM (2)](https://github.com/user-attachments/assets/7a2c361b-4e54-4ec0-bcef-ab9e8a624a5c)
+
 
 
 
