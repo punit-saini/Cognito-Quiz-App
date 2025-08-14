@@ -1,50 +1,78 @@
-# Welcome to your Expo app 👋
+# Cognito
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Cognito is a modern, mobile-first quiz app that lets you play solo or challenge friends in real-time multiplayer trivia. Built with **React Native**, **Expo**, and **Appwrite**, Cognito offers a smooth, animated user experience and robust real-time features.
 
-## Get started
+---
 
-1. Install dependencies
+## 🚀 Features
 
-   ```bash
-   npm install
-   ```
+-   **Solo Play:** Test your knowledge with a wide range of quiz questions across multiple categories.
+-   **Multiplayer Rooms:** Create or join real-time game rooms and compete with friends.
+-   **User Authentication:** Secure sign up, login, and profile management.
+-   **Animated UI:** Smooth transitions and engaging feedback using React Native’s Animated API.
+-   **Stats Tracking:** Track your quiz performance and review your results.
+-   **Responsive Design:** Looks great on all devices with NativeWind/Tailwind CSS.
+-   **Category Selection:** Choose specific categories or play with a mix of questions.
+-   **Account Management:** Delete your profile, manage your data, and more.
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## 🛠️ Tech Stack & Concepts
 
-In the output, you'll find options to open the app in a
+-   **React Native & Expo:** Cross-platform mobile development.
+-   **Expo Router:** File-based navigation for seamless routing.
+-   **Appwrite:** Backend-as-a-Service for authentication, database, and real-time features.
+-   **Zustand:** Lightweight state management.
+-   **TypeScript:** Type safety and better developer experience.
+-   **NativeWind/Tailwind CSS:** Utility-first styling for React Native.
+-   **Animated API:** For smooth UI transitions and feedback.
+-   **AsyncStorage:** Local data persistence.
+-   **Real-time Multiplayer Logic:** Sockets and live updates for game rooms.
+-   **Custom Hooks & Components:** For code reuse and clean architecture.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 📲 Getting Started
 
-## Get a fresh project
+1.  **Clone the repo:**
+    ```bash
+    git clone [https://github.com/your-username/Cognito-Quiz-App.git](https://github.com/your-username/Cognito-Quiz-App.git)
+    cd Cognito-Quiz-App
+    ```
+2.  **Install Dependencies:**
+    ```bash
+    npm install
+    ```
+3.  **Set up environment variables:**
+    Copy `.env.example` to `.env` and fill in your Appwrite endpoint and project ID.
+4.  **Start the app:**
+    ```bash
+    npx expo start
+    ```
 
-When you're ready, run:
+---
 
-```bash
-npm run reset-project
-```
+### ⚙️ Environment Variables
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Create a `.env` file in the root directory:
 
-## Learn more
+```env
+EXPO_PUBLIC_APPWRITE_PROJECT_ID=your_project_id
+EXPO_PUBLIC_APPWRITE_ENDPOINT=https://your-appwrite-endpoint/v1
 
-To learn more about developing your project with Expo, look at the following resources:
+### 📸 Screenshots
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+![WhatsApp Image 2025-08-14 at 12 32 53 PM (1)](https://github.com/user-attachments/assets/019c6a59-3ad5-4fd6-b11d-053f2b7d86e8)
+![WhatsApp Image 2025-08-14 at 12 32 54 PM (1)](https://github.com/user-attachments/assets/1884f8a9-12e8-4c1a-b1ec-3b7f06b2a21e)
+![WhatsApp Image 2025-08-14 at 12 32 55 PM](https://github.com/user-attachments/assets/6abbb999-6759-410e-8b45-253ec968ad0a)
+![WhatsApp Image 2025-08-14 at 12 35 02 PM](https://github.com/user-attachments/assets/3eca0cbc-e63f-4282-9aad-52d4cd18a85a)
+![WhatsApp Image 2025-08-14 at 12 32 53 PM](https://github.com/user-attachments/assets/42db1c6d-eb86-4d86-b0a0-4926aa87eae7)
+![WhatsApp Image 2025-08-14 at 12 32 54 PM](https://github.com/user-attachments/assets/6fb65fc7-7151-4577-b2df-a35e5d700f32)
+![WhatsApp Image 2025-08-14 at 12 32 54 PM (2)](https://github.com/user-attachments/assets/00342770-74d1-4068-96cd-852f91e6e2b2)
 
-## Join the community
 
-Join our community of developers creating universal apps.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+
+
+
